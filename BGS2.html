@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BGS Core - Elements of Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        .bg-animate {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .option-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .option-btn.selected-correct {
+            background: #10b981;
+            border-color: #34d399;
+            color: white;
+        }
+
+        .option-btn.selected-wrong {
+            background: #ef4444;
+            border-color: #f87171;
+            color: white;
+        }
+
+        .option-btn.correct-answer {
+            background: #10b981;
+            border-color: #34d399;
+            color: white;
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .timer-display {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .question-card {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .question-number {
+            font-variant-numeric: tabular-nums;
+            color: #60a5fa;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .feedback-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+        }
+
+        .feedback-correct {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .feedback-wrong {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .next-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .next-btn:hover {
+            background: #2563eb;
+        }
+
+        .hidden-question {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen p-4">
+
+    <div class="bg-animate"></div>
+    <canvas id="confetti-canvas"></canvas>
+
+    <main class="w-full max-w-4xl mx-auto relative z-10">
+
+        <header class="text-center mb-8 slide-up pt-8">
+            <div class="inline-block p-3 rounded-full bg-white/10 backdrop-blur-md mb-4 border border-white/20 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h1 class="text-5xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">BGS Core</h1>
+            <h2 class="text-2xl font-bold text-white mb-2">ELEMENTS OF MANAGEMENT</h2>
+            <p class="text-blue-100 text-lg font-medium tracking-wide uppercase opacity-80">Marketing 100 Level</p>
+        </header>
+
+        <section id="start-screen" class="glass-card rounded-3xl p-8 md:p-12 text-center slide-up mb-8" style="animation-delay: 0.1s;">
+            <div class="mb-6 text-gray-300">
+                <p class="text-lg">This quiz contains <strong class="text-white">100 questions</strong> from Chapter 1.</p>
+                <p class="text-sm mt-2">Answer each question. If you get it wrong, the correct answer will be shown.</p>
+            </div>
+            <button onclick="app.startQuiz()" class="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-blue-600 font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 hover:bg-blue-500 hover:scale-105 shadow-lg shadow-blue-500/50">
+                Start Challenge
+                <svg class="w-5 h-5 ml-2 -mr-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+            </button>
+        </section>
+
+        <section id="quiz-screen" class="hidden">
+            <div class="glass-card rounded-3xl p-6 mb-6 sticky top-4 z-20">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-bold">Question <span id="current-q">1</span> of 100</span>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider">Time Elapsed</span>
+                        <div class="text-2xl font-mono font-bold text-yellow-400 timer-display" id="timer-display">00:00</div>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 mt-3">
+                    <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 1%"></div>
+                </div>
+            </div>
+
+            <div id="questions-container"></div>
+
+            <div class="glass-card rounded-3xl p-8 text-center mt-8 mb-12">
+                <button onclick="app.finishQuiz()" class="px-8 py-4 text-lg font-bold text-white bg-green-600 rounded-xl hover:bg-green-500 transition-all shadow-lg shadow-green-500/50">
+                    Finish Quiz & See Results
+                </button>
+            </div>
+        </section>
+
+        <section id="result-screen" class="hidden glass-card rounded-3xl p-8 md:p-12 text-center mb-12">
+            <div id="result-icon" class="mb-6 text-6xl animate-bounce">🏆</div>
+            <h2 id="result-title" class="text-4xl font-bold mb-2">Quiz Completed!</h2>
+            <p id="result-message" class="text-xl text-gray-200 mb-8">Here is how you performed.</p>
+
+            <div class="bg-black/30 rounded-2xl p-6 mb-8 inline-block w-full max-w-sm border border-white/10">
+                <div class="text-sm text-gray-400 uppercase tracking-widest mb-1">Your Score</div>
+                <div class="text-6xl font-black text-white mb-2" id="score-percentage">0%</div>
+                <div class="text-sm font-medium" id="score-fraction">0/100 Correct</div>
+            </div>
+
+            <div class="bg-black/20 rounded-xl p-4 mb-8 text-left border border-white/5">
+                <div class="flex items-center gap-3 text-yellow-300 mb-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-bold">Total Time Taken</span>
+                </div>
+                <p id="total-time" class="text-2xl font-mono pl-8">00:00</p>
+            </div>
+
+            <button onclick="app.restartQuiz()" class="w-full py-4 rounded-xl bg-white text-blue-900 font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg">
+                Try Again
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // ALL 100 QUESTIONS FROM CHAPTER 1 - ELEMENTS OF MANAGEMENT
+        const allQuestions = [
+            {"q": "According to the text, management exists within the context of what?", "options": ["Organizations", "Societies", "Governments", "Institutions"], "correct": 0},
+            {"q": "What is described as 'an exercise on how best to achieve organizational goals and objectives'?", "options": ["Leadership", "Management", "Organization", "Administration"], "correct": 1},
+            {"q": "Through what means is management done according to the text?", "options": ["Effective and efficient use of organizational resources", "Command and control", "Delegation only", "Financial management only"], "correct": 0},
+            {"q": "What are the 4Ms mentioned in the text?", "options": ["Man, Machine, Money, Materials", "Man, Method, Money, Market", "Management, Money, Materials, Marketing", "Man, Machine, Method, Money"], "correct": 0},
+            {"q": "What is added to the 4Ms to make it more comprehensive?", "options": ["Marketing", "Information", "Method", "Market"], "correct": 1},
+            {"q": "What does the text describe as 'the heart of both the organization and society'?", "options": ["Leadership", "Management", "Organization", "Government"], "correct": 1},
+            {"q": "According to Onwuchekwa (2002:8), organizations are described as what in modern society?", "options": ["Rare", "Ubiquitous", "Unnecessary", "Complex"], "correct": 1},
+            {"q": "What does 'ubiquitous' mean in the context of the text?", "options": ["Numerous, of different forms, scattered all over", "Rare and unique", "Large and powerful", "Small and local"], "correct": 0},
+            {"q": "In which traditional setting does the text mention organizations forming sub-structures?", "options": ["Yoruba", "Hausa", "Ibo (old Bende, Eastern Nigeria)", "Fulani"], "correct": 2},
+            {"q": "Every organization has what according to the text?", "options": ["A leader", "An objective", "A building", "A profit motive"], "correct": 1},
+            {"q": "Organizations are described as major what of any society?", "options": ["Problems", "Stakeholders", "Challenges", "Assets"], "correct": 1},
+            {"q": "Societies achieve their goals through what?", "options": ["Governments only", "Organizations", "Individuals", "Leaders"], "correct": 1},
+            {"q": "What is one meaning of organization as 'an enterprise itself'?", "options": ["A business entity", "A social group", "A government body", "A religious group"], "correct": 0},
+            {"q": "Organization can be defined as co-operation of how many persons?", "options": ["One or more", "Two or more", "Three or more", "Five or more"], "correct": 1},
+            {"q": "According to Koontz, O'Donnel and Weihrich, organization is any group working in what fashion?", "options": ["Random", "Predetermined", "Casual", "Flexible"], "correct": 1},
+            {"q": "In the context of this work, organizations refer to a group working in what form?", "options": ["Integrated form", "Separate form", "Competitive form", "Hierarchical form"], "correct": 0},
+            {"q": "According to Scott (1981), organizations could be open or what?", "options": ["Closed", "Public", "Private", "Global"], "correct": 0},
+            {"q": "Organizations could be rational, natural or what?", "options": ["Systematic", "Chaotic", "Flexible", "Rigid"], "correct": 0},
+            {"q": "What type of goals are achieved through organizations?", "options": ["Only economic goals", "Societal goals and objectives", "Only personal goals", "Only political goals"], "correct": 1},
+            {"q": "What could an organization be in the form of?", "options": ["Only business", "Business, church, club, political association, voluntary group", "Only government", "Only educational"], "correct": 1},
+            {"q": "Organizations are formed mainly to enable societies achieve their goals through what?", "options": ["Reduction of abilities", "Enlargement of abilities", "Limitation of resources", "Centralization of power"], "correct": 1},
+            {"q": "What does enlargement of abilities generally lead to?", "options": ["Generalization and isolation", "Specialization and exchange", "Competition and conflict", "Unity and uniformity"], "correct": 1},
+            {"q": "Which of the following is NOT a reason for forming organizations?", "options": ["Compress time for accomplishment", "Take advantage of wealth of knowledge", "Create social dissatisfaction", "Earn a living"], "correct": 2},
+            {"q": "Organizations help to compress time required for what?", "options": ["Relaxation", "Accomplishment of assignments/objectives/goals", "Socializing", "Traveling"], "correct": 1},
+            {"q": "Organizations allow people to take advantage of what?", "options": ["Wealth of money", "Wealth of knowledge of others", "Physical strength", "Political power"], "correct": 1},
+            {"q": "What type of satisfaction do organizations help drive?", "options": ["Economic satisfaction", "Social satisfaction", "Political satisfaction", "Personal satisfaction"], "correct": 1},
+            {"q": "Organizations are formed to earn what?", "options": ["A living", "A degree", "A title", "A position"], "correct": 0},
+            {"q": "Organizations are formed to render what to others?", "options": ["Services", "Goods only", "Commands", "Punishments"], "correct": 0},
+            {"q": "How many basic types of organizations are there generally speaking?", "options": ["Two", "Three", "Four", "Five"], "correct": 1},
+            {"q": "Which is NOT one of the three basic types of organizations?", "options": ["Formal and informal", "Primary and secondary", "Profit and non-profit", "Principal objectives based"], "correct": 2},
+            {"q": "What leads to specialization according to the text?", "options": ["Reduction of abilities", "Enlargement of abilities", "Limited resources", "Excessive regulation"], "correct": 1},
+            {"q": "What accompanies specialization when abilities are enlarged?", "options": ["Isolation", "Exchange", "Conflict", "Competition"], "correct": 1},
+            {"q": "The formation of organizations enables achievement of goals at what level?", "options": ["Individual only", "Societal", "Family only", "Tribal only"], "correct": 1},
+            {"q": "Organizations help pool what from different people?", "options": ["Money only", "Knowledge and abilities", "Physical strength only", "Political connections"], "correct": 1},
+            {"q": "The ability to accomplish objectives faster is achieved through what?", "options": ["Working alone", "Organizational time compression", "Reducing goals", "Eliminating resources"], "correct": 1},
+            {"q": "Formal organizations are described as what kind of frameworks?", "options": ["Unstructured", "Structured", "Flexible", "Random"], "correct": 1},
+            {"q": "In formal organizations, activities are coordinated towards what?", "options": ["Individual purposes", "Predetermined common purpose", "Random objectives", "Personal goals"], "correct": 1},
+            {"q": "How do members communicate in formal organizations?", "options": ["Secretly", "Freely", "Rarely", "Only through writing"], "correct": 1},
+            {"q": "In formal organizations, members act in what manner?", "options": ["Random", "Predetermined", "Casual", "Disorganized"], "correct": 1},
+            {"q": "What exists within laws in formal organizations?", "options": ["Restriction", "Freedom", "Chaos", "Anarchy"], "correct": 1},
+            {"q": "Is membership in formal organizations accidental?", "options": ["Yes", "No", "Sometimes", "Usually"], "correct": 1},
+            {"q": "How is membership in formal organizations described?", "options": ["Accidental and random", "Conscious and timed", "Forced and permanent", "Optional and temporary"], "correct": 1},
+            {"q": "What are well defined in formal organizations?", "options": ["Only rules", "Structures showing hierarchy of Authority and Responsibility", "Only buildings", "Only salaries"], "correct": 1},
+            {"q": "Are objectives in formal organizations explicit?", "options": ["Yes", "No", "Sometimes", "Rarely"], "correct": 0},
+            {"q": "How is organizational life described in formal organizations?", "options": ["Planned and durable", "Random and temporary", "Chaotic and short", "Flexible and changing"], "correct": 0},
+            {"q": "Are relationships and interactions documented in formal organizations?", "options": ["Yes", "No", "Sometimes", "Rarely"], "correct": 0},
+            {"q": "Which is an example of formal organization?", "options": ["Beer parlour group", "Federal Civil Service Commission", "Peer group", "Disco party"], "correct": 1},
+            {"q": "Which is an example of formal organization?", "options": ["Gaming team", "Nigerian Police", "Accident rescue team", "Dinner party"], "correct": 1},
+            {"q": "Which is an example of formal organization?", "options": ["Friendship group", "First Bank", "Social club", "Family gathering"], "correct": 1},
+            {"q": "Informal organizations are described as what kind of frameworks?", "options": ["Structured", "Unstructured", "Formal", "Official"], "correct": 1},
+            {"q": "What type of relationships do informal organizations house?", "options": ["Official and documented", "Unofficial and undocumented", "Legal and binding", "Permanent and fixed"], "correct": 1},
+            {"q": "Informal organizations exist out of need to accomplish what?", "options": ["Only organizational goals", "Individual or group needs", "Government objectives", "International standards"], "correct": 1},
+            {"q": "Who described informal organizations as inter-personal relationships within formal organizations?", "options": ["Koontz", "Herbert A. Simon", "Onuoha", "Scott"], "correct": 1},
+            {"q": "How are informal organizations organized?", "options": ["Tightly", "Loosely", "Hierarchically", "Systematically"], "correct": 1},
+            {"q": "Are informal organizations flexible?", "options": ["Yes", "No", "Sometimes", "Never"], "correct": 0},
+            {"q": "Are informal organizations well-defined?", "options": ["Yes", "No, they are ill-defined", "Sometimes", "Always"], "correct": 1},
+            {"q": "How is membership obtained in informal organizations?", "options": ["Only through application", "Spontaneously (consciously or unconsciously)", "Only by election", "Only by appointment"], "correct": 1},
+            {"q": "Which is an example of informal organization?", "options": ["Nigerian Army", "Accident rescue team", "High Court", "State Government"], "correct": 1},
+            {"q": "Which is an example of informal organization?", "options": ["First Bank", "Disco or dinner party", "Federal Civil Service", "Immigration Service"], "correct": 1},
+            {"q": "Which film is mentioned regarding informal organization influence?", "options": ["Living in Bondage", "Nollywood Dreams", "The Figurine", "October 1"], "correct": 0},
+            {"q": "Who joined the cult unconsciously in 'Living in Bondage'?", "options": ["Paul", "Andy", "Obi", "Emeka"], "correct": 1},
+            {"q": "Can informal organization develop into formal group over time?", "options": ["Yes", "No", "Never", "Rarely"], "correct": 0},
+            {"q": "When can formal organization degenerate to informal?", "options": ["When rules are enforced", "When rules are not enforced and relationship uncontrolled", "When profits increase", "When staff increases"], "correct": 1},
+            {"q": "According to Onuoha (1998:4), what do primary organizations claim?", "options": ["Absolute personal and emotional involvement", "Limited commitment", "Rational relationships", "Contractual obligations"], "correct": 0},
+            {"q": "What type of attachment do members have in primary organizations?", "options": ["Affectionate and emotional", "Professional only", "Casual", "Temporary"], "correct": 0},
+            {"q": "What type of relationships exist in primary organizations?", "options": ["Impersonal and formal", "Personal, direct, spontaneous, face-to-face", "Virtual and online", "Written only"], "correct": 1},
+            {"q": "What are primary organization relationships based on?", "options": ["Precisely defined objectives", "Mutual expectations", "Legal contracts", "Financial agreements"], "correct": 1},
+            {"q": "Which is an example of primary organization?", "options": ["Family members", "High Court", "Police Force", "Bank"], "correct": 0},
+            {"q": "Which is an example of primary organization?", "options": ["Immigration service", "Organizations espousing causes dear to members", "Customs", "Army"], "correct": 1},
+            {"q": "How are relationships in secondary organizations described?", "options": ["Emotional and personal", "Rational, contractual and intellectual", "Spontaneous and affectionate", "Face-to-face only"], "correct": 1},
+            {"q": "How do relationships appear in secondary organizations?", "options": ["Informal and personal", "Formal and impersonal", "Casual", "Friendly"], "correct": 1},
+            {"q": "What type of obligations are in secondary organizations?", "options": ["Implicit", "Clearly or explicitly defined", "Emotional", "Moral"], "correct": 1},
+            {"q": "How is members' involvement limited in secondary organizations?", "options": ["To specific roles", "To emotional attachment", "To family matters", "To personal interests"], "correct": 0},
+            {"q": "What type of commitment do students and employees give to secondary organizations?", "options": ["Absolute", "Limited", "Emotional", "Personal"], "correct": 1},
+            {"q": "Secondary organizations are characterized by what type of expectations?", "options": ["Mutual emotional expectations", "Contractual obligations", "Family ties", "Friendship bonds"], "correct": 1},
+            {"q": "Which is more likely to be a secondary organization?", "options": ["Family", "Employment organization", "Peer group", "Religious sect"], "correct": 1},
+            {"q": "Primary organizations involve what kind of dedication?", "options": ["Professional dedication with emotional attachment", "Only financial dedication", "Only time dedication", "No dedication"], "correct": 0},
+            {"q": "The distinction between primary and secondary is based on what?", "options": ["Size only", "Nature of relationships and involvement", "Location", "Age"], "correct": 1},
+            {"q": "How many types of organizations are listed under principal objectives classification?", "options": ["Five", "Six", "Seven", "Eight"], "correct": 2},
+            {"q": "Which is NOT listed under principal objectives classification?", "options": ["Religious organizations", "Government organizations", "Educational organizations", "Protective organizations"], "correct": 2},
+            {"q": "Which organizations attend to spiritual needs?", "options": ["Social organizations", "Religious organizations", "Government organizations", "Economic organizations"], "correct": 1},
+            {"q": "Which is an example of religious organization?", "options": ["Nigerian Police", "Presbyterian Church", "First Bank", "Army"], "correct": 1},
+            {"q": "Which is an example of religious organization?", "options": ["Customs", "Mosque", "High Court", "Fire Service"], "correct": 1},
+            {"q": "Which organizations are charged with responsibility of government in society?", "options": ["Social organizations", "Government organizations", "Religious organizations", "Protective organizations"], "correct": 1},
+            {"q": "Which is an example of government organization?", "options": ["Peer group", "Local government", "Social club", "Fraternity"], "correct": 1},
+            {"q": "Which is an example of government organization?", "options": ["Beer parlour", "Immigration services", "Disco", "Gaming team"], "correct": 1},
+            {"q": "What are major roles of government organizations?", "options": ["Only making laws", "Ensuring orderliness, smooth governance, welfare of citizens", "Only collecting taxes", "Only providing employment"], "correct": 1},
+            {"q": "Which organizations are charged with protection of citizens?", "options": ["Social organizations", "Protective organizations", "Religious organizations", "Economic organizations"], "correct": 1},
+            {"q": "Which is an example of protective organization?", "options": ["Bank", "Nigerian Police Forces", "Church", "School"], "correct": 1},
+            {"q": "Which is an example of protective organization?", "options": ["Club", "Armed Forces", "Mosque", "Company"], "correct": 1},
+            {"q": "Which organizations serve need for relaxation, ego, contact, identification?", "options": ["Government organizations", "Social organizations", "Protective organizations", "Religious organizations"], "correct": 1},
+            {"q": "Which are typical examples of social organizations?", "options": ["Police and Army", "Clubs, fraternities and teams", "Banks and Companies", "Courts and Government"], "correct": 1},
+            {"q": "Which type of organization includes service organizations?", "options": ["Formal only", "Principal objectives based", "Primary only", "Informal only"], "correct": 1},
+            {"q": "UNN is given as an example of what type of organization?", "options": ["Financial", "Educational", "Religious", "Governmental"], "correct": 1},
+            {"q": "CBN is given as an example of what type of organization?", "options": ["Educational", "Financial", "Religious", "Social"], "correct": 1},
+            {"q": "Ohaneze ndi Igbo is given as an example of what?", "options": ["Religious organization", "Cultural organization", "Government organization", "Educational organization"], "correct": 1},
+            {"q": "NNPC is given as an example of what?", "options": ["Financial organization", "Governmental organization", "Social organization", "Religious organization"], "correct": 1},
+            {"q": "What does NGO stand for?", "options": ["National Government Organization", "Non-Governmental Organization", "New Governmental Order", "National Growth Objective"], "correct": 1},
+            {"q": "Umu-ada refers to what in traditional organizations?", "options": ["Village sons", "Village daughters group", "Council of elders", "Warriors"], "correct": 1},
+            {"q": "Ndi Ichie refers to what?", "options": ["Warriors", "Council of elders", "Youth group", "Women group"], "correct": 1},
+            {"q": "Which is an example of peer-based organization?", "options": ["Federal Government", "School or class mates", "Police Force", "Bank"], "correct": 1},
+            {"q": "Gender-based organizations are listed as which number in the forms of organizations?", "options": ["7", "8", "9", "10"], "correct": 2},
+            {"q": "Inter-Governmental organizations are listed as which number?", "options": ["6", "7", "8", "9"], "correct": 2}
+        ];
+
+        const app = {
+            currentQuestionIndex: 0,
+            score: 0,
+            answers: {},
+            timerInterval: null,
+            totalTimeSeconds: 0,
+
+            elements: {
+                startScreen: document.getElementById('start-screen'),
+                quizScreen: document.getElementById('quiz-screen'),
+                resultScreen: document.getElementById('result-screen'),
+                questionsContainer: document.getElementById('questions-container'),
+                currentQ: document.getElementById('current-q'),
+                timerDisplay: document.getElementById('timer-display'),
+                progressBar: document.getElementById('progress-bar'),
+                scorePercentage: document.getElementById('score-percentage'),
+                scoreFraction: document.getElementById('score-fraction'),
+                resultTitle: document.getElementById('result-title'),
+                resultMessage: document.getElementById('result-message'),
+                resultIcon: document.getElementById('result-icon'),
+                totalTime: document.getElementById('total-time')
+            },
+
+            startQuiz() {
+                this.currentQuestionIndex = 0;
+                this.score = 0;
+                this.answers = {};
+                this.totalTimeSeconds = 0;
+
+                this.elements.startScreen.classList.add('hidden');
+                this.elements.resultScreen.classList.add('hidden');
+                this.elements.quizScreen.classList.remove('hidden');
+
+                this.renderAllQuestions();
+                this.startTimer();
+                this.showQuestion(0);
+            },
+
+            renderAllQuestions() {
+                this.elements.questionsContainer.innerHTML = '';
+                
+                allQuestions.forEach((q, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.id = 'question-' + index;
+                    questionDiv.className = 'glass-card rounded-3xl p-6 mb-6 hidden-question question-card';
+                    
+                    let optionsHtml = '';
+                    q.options.forEach((opt, optIndex) => {
+                        optionsHtml += `
+                            <button id="q${index}-opt${optIndex}" 
+                                onclick="app.selectAnswer(${index}, ${optIndex})"
+                                class="option-btn w-full text-left p-4 rounded-xl border border-white/10 bg-white/5 text-white font-medium text-lg mb-3 relative overflow-hidden">
+                                <span class="inline-block w-8 font-bold opacity-50">${String.fromCharCode(65 + optIndex)}.</span> ${opt}
+                            </button>
+                        `;
+                    });
+
+                    questionDiv.innerHTML = `
+                        <div class="question-number">Question ${index + 1} of 100</div>
+                        <h3 class="text-xl font-bold mb-4">${q.q}</h3>
+                        <div class="options-container">${optionsHtml}</div>
+                        <div id="feedback-${index}" class="feedback-message hidden"></div>
+                        <button id="next-${index}" onclick="app.nextQuestion()" class="next-btn hidden">Next Question →</button>
+                    `;
+                    
+                    this.elements.questionsContainer.appendChild(questionDiv);
+                });
+            },
+
+            showQuestion(index) {
+                // Hide all questions
+                document.querySelectorAll('.question-card').forEach(el => {
+                    el.classList.add('hidden-question');
+                });
+                
+                // Show current question
+                const currentEl = document.getElementById('question-' + index);
+                if (currentEl) {
+                    currentEl.classList.remove('hidden-question');
+                    currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                this.elements.currentQ.textContent = index + 1;
+                const progress = ((index + 1) / 100) * 100;
+                this.elements.progressBar.style.width = progress + '%';
+                this.currentQuestionIndex = index;
+            },
+
+            selectAnswer(qIndex, selectedIndex) {
+                // Prevent multiple answers
+                if (this.answers[qIndex] !== undefined) return;
+
+                const correctIndex = allQuestions[qIndex].correct;
+                this.answers[qIndex] = selectedIndex;
+
+                // Disable all options for this question
+                allQuestions[qIndex].options.forEach((_, optIndex) => {
+                    const btn = document.getElementById('q' + qIndex + '-opt' + optIndex);
+                    btn.disabled = true;
+                    btn.onclick = null;
+                });
+
+                // Mark selected answer
+                const selectedBtn = document.getElementById('q' + qIndex + '-opt' + selectedIndex);
+                
+                if (selectedIndex === correctIndex) {
+                    // Correct answer
+                    selectedBtn.classList.add('selected-correct');
+                    this.score++;
+                    this.showFeedback(qIndex, true, "✓ Correct! Well done.");
+                } else {
+                    // Wrong answer - show correct answer big and highlighted
+                    selectedBtn.classList.add('selected-wrong');
+                    const correctBtn = document.getElementById('q' + qIndex + '-opt' + correctIndex);
+                    correctBtn.classList.add('correct-answer');
+                    correctBtn.style.transform = 'scale(1.05)';
+                    correctBtn.style.fontSize = '1.1em';
+                    correctBtn.style.fontWeight = 'bold';
+                    this.showFeedback(qIndex, false, "✗ Wrong! The correct answer is highlighted in green above.");
+                }
+
+                // Show next button
+                const nextBtn = document.getElementById('next-' + qIndex);
+                nextBtn.classList.remove('hidden');
+                
+                // Auto-scroll to show feedback and next button
+                setTimeout(() => {
+                    nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            },
+
+            showFeedback(qIndex, isCorrect, message) {
+                const feedbackEl = document.getElementById('feedback-' + qIndex);
+                feedbackEl.textContent = message;
+                feedbackEl.className = 'feedback-message ' + (isCorrect ? 'feedback-correct' : 'feedback-wrong');
+                feedbackEl.classList.remove('hidden');
+            },
+
+            nextQuestion() {
+                if (this.currentQuestionIndex < 99) {
+                    this.showQuestion(this.currentQuestionIndex + 1);
+                } else {
+                    this.finishQuiz();
+                }
+            },
+
+            startTimer() {
+                clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    this.totalTimeSeconds++;
+                    this.updateTimerDisplay();
+                }, 1000);
+            },
+
+            updateTimerDisplay() {
+                const mins = Math.floor(this.totalTimeSeconds / 60).toString().padStart(2, '0');
+                const secs = (this.totalTimeSeconds % 60).toString().padStart(2, '0');
+                this.elements.timerDisplay.textContent = mins + ':' + secs;
+            },
+
+            finishQuiz() {
+                clearInterval(this.timerInterval);
+                this.elements.quizScreen.classList.add('hidden');
+                this.elements.resultScreen.classList.remove('hidden');
+                this.elements.resultScreen.classList.add('slide-up');
+
+                const percentage = Math.round((this.score / 100) * 100);
+                this.animateValue(this.elements.scorePercentage, 0, percentage, 2000);
+                this.elements.scoreFraction.textContent = this.score + '/100 Correct';
+
+                const mins = Math.floor(this.totalTimeSeconds / 60).toString().padStart(2, '0');
+                const secs = (this.totalTimeSeconds % 60).toString().padStart(2, '0');
+                this.elements.totalTime.textContent = mins + ':' + secs;
+
+                if (percentage >= 60) {
+                    this.elements.resultTitle.textContent = "Congratulations!";
+                    this.elements.resultMessage.textContent = "Excellent work! You have mastered this tutorial.";
+                    this.elements.resultIcon.textContent = "🎓";
+                    startConfetti();
+                } else {
+                    this.elements.resultTitle.textContent = "Keep Trying!";
+                    this.elements.resultMessage.textContent = "You need 60% to pass. Review the material and try again!";
+                    this.elements.resultIcon.textContent = "📚";
+                    this.elements.resultTitle.classList.add('text-yellow-400');
+                }
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            animateValue(obj, start, end, duration) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            },
+
+            restartQuiz() {
+                stopConfetti();
+                this.elements.resultScreen.classList.add('hidden');
+                this.elements.startScreen.classList.remove('hidden');
+                this.elements.timerDisplay.textContent = "00:00";
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confettiAnimationId;
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createParticle() {
+            return {
+                x: Math.random() * canvas.width,
+                y: -20,
+                size: Math.random() * 10 + 5,
+                speedY: Math.random() * 3 + 2,
+                speedX: Math.random() * 2 - 1,
+                color: 'hsl(' + Math.random() * 360 + ', 100%, 50%)',
+                rotation: Math.random() * 360,
+                rotationSpeed: Math.random() * 10 - 5
+            };
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (particles.length < 150) particles.push(createParticle());
+            particles.forEach((p, index) => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+                if (p.y > canvas.height) particles[index] = createParticle();
+            });
+            confettiAnimationId = requestAnimationFrame(updateConfetti);
+        }
+
+        function startConfetti() {
+            particles = [];
+            updateConfetti();
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(confettiAnimationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+        }
+    </script>
+</body>
+</html>
